@@ -97,7 +97,7 @@ def new_type(name, mixin, base_type, d=dict()):
 class ArrayMixin(object):
 	u"""Array mixin, provides display routines"""
 	def __repr__(self):
-		return u'<%s> = %s' % (type(self).__name__, self)
+		return u'<%s=%s>' % (type(self).__name__, self)
 
 	def __str__(self):
 		return unicode(self)
@@ -138,7 +138,7 @@ class ArrayMixin(object):
 class StructMixin(object):
 	u"""Struct mixin, provides display routines"""
 	def __repr__(self):
-		return u'<%s> = %s' % (type(self).__name__, self)
+		return u'<%s=%s>' % (type(self).__name__, self)
 
 	def __str__(self):
 		return unicode(self)
@@ -214,7 +214,7 @@ class StructMixin(object):
 class SimpleTypeMixin(object):
 	u"""Simple type routines, provides display and base type operations"""
 	def __repr__(self):
-		return u'<%s> = %s' % (type(self).__name__, self)
+		return u'<%s=%s>' % (type(self).__name__, self)
 
 	def __str__(self):
 		return unicode(self)
@@ -338,7 +338,7 @@ class EnumMixin(object):
 	u"""Enum mixin, used to provide display and attr access"""
 	# XXX add bitfield support
 	def __repr__(self):
-		return u'<%s> = %s' % (type(self).__name__, self)
+		return u'<%s=%s>' % (type(self).__name__, self)
 
 	def __unicode__(self):
 		retval = u'{undefined}'

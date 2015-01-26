@@ -25,6 +25,7 @@
 from io import *
 import inspect
 import ptypes
+import ctypes
 import sys
 
 
@@ -39,15 +40,15 @@ class StreamReader(object):
 		o = obj
 		if inspect.isclass(obj):
 			o = obj()
-		ctypes.memmove(addressof(o), buf, sizeof(buf))
+		ctypes.memmove(ctypes.addressof(o), buf, len(buf))
 		return o
 
 	def peekinto(self, obj):
-		buf = self.peek(pstruct.sizeof(obj))
+		buf = self.peek(ptypes.sizeof(obj))
 		return self._into_(buf, obj)
 
 	def readinto(self, obj):
-		buf = self.read(pstruct.sizeof(obj))
+		buf = self.read(ptypes.sizeof(obj))
 		return self._into_(buf, obj)
 
 	def peek(self, length):
@@ -75,17 +76,66 @@ class StreamWriter(object):
 
 
 class Scatter(object):
-	pass
+	def __init__(self, type):
+		self._type_ = type
+		self._order_ = [] # used for printing
+
+	def __setattr__(self, name, value):
+		if name[0] != u'_':
+			# save the order as we add subelements, so we can print in order
+			self._order_.append(name)
+		super(Scatter, self).__setattr__(name, value)
+
+	def __repr__(self):
+		return u'<%s=%s>' % (type(self).__name__, self)
+
+	def __str__(self):
+		return unicode(self)
+
+	def __unicode__(self):
+		content = StringIO()
+		content.write(u'{\n')
+		for name in self._order_:
+			a = getattr(self, name)
+			content.write(u'%s%s %s = ' % (ptypes.TAB, type(a).__name__, name))
+			content.write(ptypes._indent(unicode(a)))
+		content.write(u'}')
+		return content.getvalue()
+
+
+def unpack(stream, type):
+	sct = Scatter(type)
+	sct._type_._from_stream_(stream, sct)
+	return sct
+
+def pack(sct, stream):
+	sct._type_._to_stream_(sct, stream)
 
 
 
 
 if __name__ == u'__main__':
+	class SS(ptypes.Struct):
+		_pack_ = 4
+		_fields_ = [
+			('ptr', ptypes.Pointer),
+			('len', ptypes.Int8)
+		]
+
+		@classmethod
+		def _from_stream_(cls, stream, sct):
+			sct.hdr = stream.readinto(SS)
+
+		@classmethod
+		def _to_stream_(cls, sct, stream):
+			stream.write(sct.hdr)
+
+
 	s = StreamReader(sys.stdin)
-	#s.readinto(Packet)
-	# Packet.unpack(s)
-	#     stream.readinto(self)
-	#     stream.peekinto(self)
-	#     stream.read(128)
+	sct = unpack(s, SS)
+	print repr(sct)
+	b = BytesIO()
+	pack(sct, b)
+	print b.getvalue()
 
 
