@@ -43,6 +43,9 @@ class StreamReader(object):
 		ctypes.memmove(ctypes.addressof(o), buf, len(buf))
 		return o
 
+	def _read_(self, length):
+		return self._stream.read(length - len(self._peekahead))
+
 	def peekinto(self, obj):
 		buf = self.peek(ptypes.sizeof(obj))
 		return self._into_(buf, obj)
@@ -61,7 +64,7 @@ class StreamReader(object):
 		if length <= len(self._peekahead):
 			retval = self._peekahead[:length] # return some peeked data
 		else:
-			buf = self._stream.read(length - len(self._peekahead))
+			buf = self._read_(length - len(self._peekahead))
 			retval = self._peekahead + buf
 		self._peekahead = self._peekahead[length:]
 		return retval
@@ -71,8 +74,29 @@ class StreamWriter(object):
 	def __init__(self, stream):
 		self._stream = stream
 
-	def write(self, buf):
+	def _write_(self, buf):
 		return self._stream.write(buf)
+
+	def write(self, buf):
+		return self._write_(buf)
+
+
+class SocketStream(StreamReader, StreamWriter):
+	def __init__(self, s):
+		super(SocketStream, self).__init__(s)
+
+	def _read_(self, length):
+		return self._stream.recv(length)
+
+	def _write_(self, buf):
+		return self._stream.send(buf)
+
+
+class Stream(StreamReader, StreamWriter):
+	def __init__(self, f):
+		super(Stream, self).__init__(f)
+
+
 
 
 class Scatter(object):
